@@ -7,14 +7,18 @@ export default function ProtectedRoute({ children }: PropsWithChildren) {
   const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthed(!!session?.user);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const guestActive = localStorage.getItem('guest_active') === 'true';
+      setIsAuthed(!!session?.user || guestActive);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthed(!!session?.user);
+    const init = async () => {
+      const guestActive = localStorage.getItem('guest_active') === 'true';
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthed(!!session?.user || guestActive);
       setLoading(false);
-    });
+    };
+    init();
 
     return () => subscription.unsubscribe();
   }, []);

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const ensureSeo = () => {
   document.title = "Walletflow Auth – Login & Signup"; // Title under 60 chars
@@ -32,7 +33,10 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [showGuest, setShowGuest] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [guestAge, setGuestAge] = useState<string>("");
+  const [guestDob, setGuestDob] = useState("");
   useEffect(() => {
     ensureSeo();
 
@@ -89,6 +93,21 @@ export default function Auth() {
     }
   };
 
+  const handleGuestSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!guestName || !guestAge || !guestDob) {
+      toast({ title: "Missing info", description: "Name, age, and date of birth are required.", variant: "destructive" });
+      return;
+    }
+    localStorage.setItem("guest_active", "true");
+    localStorage.setItem("guest_profile", JSON.stringify({ name: guestName, age: Number(guestAge), dob: guestDob }));
+    localStorage.setItem("onboarding_needs_permission", "true");
+    localStorage.setItem("onboarding_needs_budget", "true");
+    setShowGuest(false);
+    toast({ title: "Guest mode enabled", description: "We’ll guide you through a quick setup." });
+    navigate("/", { replace: true });
+  };
+
   return (
     <main className="min-h-screen bg-background flex items-center justify-center px-4">
       <article className="w-full max-w-md">
@@ -119,6 +138,11 @@ export default function Auth() {
                 <Button variant="secondary" onClick={handleGoogle} disabled={loading} className="w-full">
                   Continue with Google
                 </Button>
+                <div className="mt-3">
+                  <Button variant="outline" className="w-full hover-scale" type="button" onClick={() => setShowGuest(true)}>
+                    Continue as Guest
+                  </Button>
+                </div>
               </TabsContent>
               <TabsContent value="signup" className="mt-4">
                 <form onSubmit={handleEmailSignUp} className="space-y-4">
@@ -136,10 +160,44 @@ export default function Auth() {
                 <Button variant="secondary" onClick={handleGoogle} disabled={loading} className="w-full">
                   Continue with Google
                 </Button>
+                <div className="mt-3">
+                  <Button variant="outline" className="w-full hover-scale" type="button" onClick={() => setShowGuest(true)}>
+                    Continue as Guest
+                  </Button>
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
+
+        <Dialog open={showGuest} onOpenChange={setShowGuest}>
+          <DialogContent className="animate-enter">
+            <DialogHeader>
+              <DialogTitle>Continue as Guest</DialogTitle>
+              <DialogDescription>Provide your details to personalize your experience.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleGuestSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="guest-name">Full name</Label>
+                <Input id="guest-name" value={guestName} onChange={(e) => setGuestName(e.target.value)} required placeholder="e.g. Alex Doe" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="guest-age">Age</Label>
+                  <Input id="guest-age" type="number" min={1} step={1} value={guestAge} onChange={(e) => setGuestAge(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="guest-dob">Date of birth</Label>
+                  <Input id="guest-dob" type="date" value={guestDob} onChange={(e) => setGuestDob(e.target.value)} required />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="ghost" onClick={() => setShowGuest(false)}>Cancel</Button>
+                <Button type="submit" className="hover-scale">Continue</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </article>
     </main>
   );
