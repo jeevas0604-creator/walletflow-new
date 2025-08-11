@@ -1,97 +1,106 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { toast } from "@/components/ui/use-toast";
+import { useSmsTransactions } from "@/hooks/useSmsTransactions";
+import { getDecrypted, saveEncrypted } from "@/lib/secureStore";
+
 const setSeo = () => {
   document.title = "Walletflow – Dashboard";
   const desc = "Your Walletflow dashboard: budgets, transactions, and insights.";
   let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-  if (!meta) {
-    meta = document.createElement("meta");
-    meta.name = "description";
-    document.head.appendChild(meta);
-  }
+  if (!meta) { meta = document.createElement("meta"); meta.name = "description"; document.head.appendChild(meta); }
   meta.content = desc;
   let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-  if (!canonical) {
-    canonical = document.createElement("link");
-    canonical.rel = "canonical";
-    document.head.appendChild(canonical);
-  }
+  if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
   canonical.href = window.location.href;
 };
 
-const Index = () => {
-  const [showPermission, setShowPermission] = useState(false);
-  const [ackSimSms, setAckSimSms] = useState(false);
+export default function Index() {
+  const { transactions, totals, loading: smsLoading, error } = useSmsTransactions();
   const [showBudget, setShowBudget] = useState(false);
   const [amount, setAmount] = useState("");
   const [month, setMonth] = useState("");
+  const [budgetAmt, setBudgetAmt] = useState<number | null>(null);
+
+  useEffect(() => { setSeo(); }, []);
   useEffect(() => {
-    setSeo();
-    const guest = localStorage.getItem("guest_active") === "true";
-    if (!guest) return;
-    const needsPerm = localStorage.getItem("onboarding_needs_permission") === "true";
-    const needsBudget = localStorage.getItem("onboarding_needs_budget") === "true";
-    if (needsPerm) setShowPermission(true);
-    else if (needsBudget) setShowBudget(true);
+    (async () => {
+      const b = await getDecrypted<{ amount: number; month_year: string }>("budget", { amount: 0, month_year: "" });
+      if (b.amount > 0) setBudgetAmt(b.amount);
+    })();
   }, []);
+
+  const progress = useMemo(() => {
+    if (!budgetAmt) return 0;
+    return Math.min(100, Math.round((totals.expense / budgetAmt) * 100));
+  }, [budgetAmt, totals.expense]);
+
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background">
-      <section className="text-center animate-fade-in">
-        <h1 className="text-4xl font-bold mb-4">Walletflow Dashboard</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <main className="min-h-screen bg-background">
+      <section className="container py-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Card className="col-span-2 md:col-span-1">
+          <CardHeader><CardTitle>Total Spent (This Month)</CardTitle></CardHeader>
+          <CardContent className="text-2xl font-bold">₹{totals.expense.toLocaleString("en-IN")}</CardContent>
+        </Card>
+        <Card className="col-span-2 md:col-span-1">
+          <CardHeader><CardTitle>Total Income</CardTitle></CardHeader>
+          <CardContent className="text-2xl font-bold">₹{totals.income.toLocaleString("en-IN")}</CardContent>
+        </Card>
+        <Card className="col-span-2">
+          <CardHeader><CardTitle>Budget Progress</CardTitle></CardHeader>
+          <CardContent>
+            <div className="h-3 rounded-full bg-muted overflow-hidden">
+              <div className="h-3 bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
+            </div>
+            <div className="mt-2 text-sm text-muted-foreground">{progress}% used {budgetAmt ? `(₹${budgetAmt.toLocaleString("en-IN")})` : "— set in Settings"}</div>
+          </CardContent>
+        </Card>
+        <Card className="col-span-2 md:col-span-1">
+          <CardHeader><CardTitle>Top Category</CardTitle></CardHeader>
+          <CardContent className="text-lg">{totals.topCategory}</CardContent>
+        </Card>
       </section>
 
-      <Dialog open={showPermission} onOpenChange={setShowPermission}>
-        <DialogContent className="animate-enter">
-          <DialogHeader>
-            <DialogTitle>Permissions</DialogTitle>
-            <DialogDescription>
-              To auto-categorize expenses from messages, we need access. Browsers can’t read SMS, so we’ll simulate this for now.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Input id="sms-sim" type="checkbox" checked={ackSimSms} onChange={(e) => setAckSimSms(e.target.checked)} />
-              <Label htmlFor="sms-sim">I understand and allow simulated SMS read</Label>
-            </div>
+      <section className="container pb-8">
+        {smsLoading ? (
+          <div className="text-center text-muted-foreground">Scanning SMS…</div>
+        ) : error ? (
+          <div className="text-center text-destructive">{error}</div>
+        ) : (
+          <div className="grid gap-3">
+            {transactions.slice(0, 20).map(t => (
+              <Card key={t.id} className="hover:shadow-sm transition">
+                <CardContent className="py-3 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold">{t.merchant || t.category}</div>
+                    <div className="text-xs text-muted-foreground">{new Date(t.occurred_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
+                  </div>
+                  <div className={t.type === "debit" ? "text-destructive font-bold" : "text-emerald-600 font-bold"}>
+                    {t.type === "debit" ? "-" : "+"}₹{t.amount.toLocaleString("en-IN")}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowPermission(false)}>Skip</Button>
-            <Button disabled={!ackSimSms} onClick={async () => {
-              try { if ("Notification" in window) { await Notification.requestPermission(); } } catch {}
-              localStorage.setItem("onboarding_needs_permission", "false");
-              if (localStorage.getItem("onboarding_needs_budget") === "true") {
-                setShowPermission(false);
-                setShowBudget(true);
-              } else {
-                setShowPermission(false);
-                toast({ title: "Permissions set", description: "Thanks! You're all set." });
-              }
-            }}>Continue</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        )}
+      </section>
 
       <Dialog open={showBudget} onOpenChange={setShowBudget}>
-        <DialogContent className="animate-enter">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Set up your first budget</DialogTitle>
-            <DialogDescription>Define a monthly limit to track your spending.</DialogDescription>
+            <DialogTitle>Set monthly budget</DialogTitle>
+            <DialogDescription>Linking dashboard progress to this amount.</DialogDescription>
           </DialogHeader>
-          <form className="space-y-4" onSubmit={(e) => {
+          <form className="space-y-4" onSubmit={async (e) => {
             e.preventDefault();
-            if (!amount || !month) {
-              toast({ title: "Missing info", description: "Enter amount and month.", variant: "destructive" });
-              return;
-            }
-            localStorage.setItem("guest_budget", JSON.stringify({ amount: Number(amount), month_year: month }));
-            localStorage.setItem("onboarding_needs_budget", "false");
+            if (!amount || !month) return;
+            const data = { amount: Number(amount), month_year: month };
+            await saveEncrypted("budget", data);
+            setBudgetAmt(data.amount);
             setShowBudget(false);
-            toast({ title: "Budget saved", description: "You can change this later." });
           }}>
             <div className="space-y-2">
               <Label htmlFor="budget-amount">Amount</Label>
@@ -102,14 +111,15 @@ const Index = () => {
               <Input id="budget-month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} required />
             </div>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setShowBudget(false)}>Cancel</Button>
-              <Button type="submit" className="hover-scale">Save budget</Button>
+              <Button type="submit">Save</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      <div className="fixed bottom-6 right-6">
+        <Button onClick={() => setShowBudget(true)} variant="secondary">Set Budget</Button>
+      </div>
     </main>
   );
-};
-
-export default Index;
+}
