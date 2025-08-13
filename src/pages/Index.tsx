@@ -1,125 +1,288 @@
-import { useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useSmsTransactions } from "@/hooks/useSmsTransactions";
-import { getDecrypted, saveEncrypted } from "@/lib/secureStore";
+import { getDecrypted } from "@/lib/secureStore";
+import { FinancialSummary } from "@/components/dashboard/FinancialSummary";
+import { TransactionList } from "@/components/dashboard/TransactionList";
+import { QuickActions } from "@/components/dashboard/QuickActions";
+import { PermissionSetup } from "@/components/onboarding/PermissionSetup";
+import { toast } from "@/components/ui/use-toast";
+import { Settings, Menu, User, LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const setSeo = () => {
-  document.title = "Walletflow – Dashboard";
-  const desc = "Your Walletflow dashboard: budgets, transactions, and insights.";
+  document.title = "WalletFlow – Smart Expense Tracker";
+  const desc = "Track your expenses automatically with AI-powered SMS transaction analysis. Budgets, insights, and financial control.";
   let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-  if (!meta) { meta = document.createElement("meta"); meta.name = "description"; document.head.appendChild(meta); }
+  if (!meta) { 
+    meta = document.createElement("meta"); 
+    meta.name = "description"; 
+    document.head.appendChild(meta); 
+  }
   meta.content = desc;
+  
   let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-  if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
+  if (!canonical) { 
+    canonical = document.createElement("link"); 
+    canonical.rel = "canonical"; 
+    document.head.appendChild(canonical); 
+  }
   canonical.href = window.location.href;
 };
 
 export default function Index() {
-  const { transactions, totals, loading: smsLoading, error } = useSmsTransactions();
-  const [showBudget, setShowBudget] = useState(false);
-  const [amount, setAmount] = useState("");
-  const [month, setMonth] = useState("");
-  const [budgetAmt, setBudgetAmt] = useState<number | null>(null);
+  const navigate = useNavigate();
+  const { transactions, totals, loading: smsLoading, error, restore } = useSmsTransactions();
+  const [budget, setBudget] = useState<{ amount: number; month_year: string } | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  useEffect(() => { setSeo(); }, []);
   useEffect(() => {
-    (async () => {
-      const b = await getDecrypted<{ amount: number; month_year: string }>("budget", { amount: 0, month_year: "" });
-      if (b.amount > 0) setBudgetAmt(b.amount);
-    })();
+    setSeo();
+    
+    // Check for onboarding needs
+    const needsPermission = localStorage.getItem('onboarding_needs_permission') === 'true';
+    if (needsPermission) {
+      setShowOnboarding(true);
+    }
+
+    // Load user profile
+    const guestProfile = localStorage.getItem('guest_profile');
+    if (guestProfile) {
+      setUserProfile(JSON.parse(guestProfile));
+    }
+
+    // Load budget
+    loadBudget();
   }, []);
 
-  const progress = useMemo(() => {
-    if (!budgetAmt) return 0;
-    return Math.min(100, Math.round((totals.expense / budgetAmt) * 100));
-  }, [budgetAmt, totals.expense]);
+  const loadBudget = async () => {
+    try {
+      const budgetData = await getDecrypted<{ amount: number; month_year: string }>("budget", null);
+      if (budgetData?.amount) {
+        setBudget(budgetData);
+      }
+    } catch (error) {
+      console.warn("Failed to load budget:", error);
+    }
+  };
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    localStorage.removeItem('onboarding_needs_permission');
+    
+    // Trigger SMS scan after permission is granted
+    restore();
+    
+    toast({
+      title: "Welcome to WalletFlow!",
+      description: "Your transaction tracking is now set up."
+    });
+  };
+
+  const handleRefreshTransactions = () => {
+    restore();
+  };
+
+  const handleBudgetUpdate = (newBudget: { amount: number; month_year: string }) => {
+    setBudget(newBudget);
+  };
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
+      localStorage.removeItem('guest_active');
+      localStorage.removeItem('guest_profile');
+      navigate('/auth');
+    }
+  };
+
+  const handleGuestLogout = () => {
+    localStorage.removeItem('guest_active');
+    localStorage.removeItem('guest_profile');
+    navigate('/auth');
+  };
+
+  if (showOnboarding) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center p-4">
+        <PermissionSetup onComplete={handleOnboardingComplete} />
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background">
-      <section className="container py-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card className="col-span-2 md:col-span-1">
-          <CardHeader><CardTitle>Total Spent (This Month)</CardTitle></CardHeader>
-          <CardContent className="text-2xl font-bold">₹{totals.expense.toLocaleString("en-IN")}</CardContent>
-        </Card>
-        <Card className="col-span-2 md:col-span-1">
-          <CardHeader><CardTitle>Total Income</CardTitle></CardHeader>
-          <CardContent className="text-2xl font-bold">₹{totals.income.toLocaleString("en-IN")}</CardContent>
-        </Card>
-        <Card className="col-span-2">
-          <CardHeader><CardTitle>Budget Progress</CardTitle></CardHeader>
-          <CardContent>
-            <div className="h-3 rounded-full bg-muted overflow-hidden">
-              <div className="h-3 bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
+      {/* Header */}
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-primary">WalletFlow</h1>
+              <p className="text-sm text-muted-foreground">Smart Expense Tracker</p>
             </div>
-            <div className="mt-2 text-sm text-muted-foreground">{progress}% used {budgetAmt ? `(₹${budgetAmt.toLocaleString("en-IN")})` : "— set in Settings"}</div>
-          </CardContent>
-        </Card>
-        <Card className="col-span-2 md:col-span-1">
-          <CardHeader><CardTitle>Top Category</CardTitle></CardHeader>
-          <CardContent className="text-lg">{totals.topCategory}</CardContent>
-        </Card>
-      </section>
 
-      <section className="container pb-8">
-        {smsLoading ? (
-          <div className="text-center text-muted-foreground">Scanning SMS…</div>
-        ) : error ? (
-          <div className="text-center text-destructive">{error}</div>
-        ) : (
-          <div className="grid gap-3">
-            {transactions.slice(0, 20).map(t => (
-              <Card key={t.id} className="hover:shadow-sm transition">
-                <CardContent className="py-3 flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold">{t.merchant || t.category}</div>
-                    <div className="text-xs text-muted-foreground">{new Date(t.occurred_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</div>
-                  </div>
-                  <div className={t.type === "debit" ? "text-destructive font-bold" : "text-emerald-600 font-bold"}>
-                    {t.type === "debit" ? "-" : "+"}₹{t.amount.toLocaleString("en-IN")}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-4">
+              {userProfile && (
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span className="text-sm">{userProfile.name}</span>
+                </div>
+              )}
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/settings')}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={userProfile ? handleGuestLogout : handleLogout}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                {userProfile ? 'Exit Guest' : 'Logout'}
+              </Button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="md:hidden"
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
           </div>
-        )}
-      </section>
 
-      <Dialog open={showBudget} onOpenChange={setShowBudget}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Set monthly budget</DialogTitle>
-            <DialogDescription>Linking dashboard progress to this amount.</DialogDescription>
-          </DialogHeader>
-          <form className="space-y-4" onSubmit={async (e) => {
-            e.preventDefault();
-            if (!amount || !month) return;
-            const data = { amount: Number(amount), month_year: month };
-            await saveEncrypted("budget", data);
-            setBudgetAmt(data.amount);
-            setShowBudget(false);
-          }}>
-            <div className="space-y-2">
-              <Label htmlFor="budget-amount">Amount</Label>
-              <Input id="budget-amount" type="number" min={0} step={1} value={amount} onChange={(e) => setAmount(e.target.value)} required />
+          {/* Mobile Menu */}
+          {showMobileMenu && (
+            <div className="md:hidden mt-4 pt-4 border-t space-y-2">
+              {userProfile && (
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-4 w-4" />
+                  <span>{userProfile.name}</span>
+                </div>
+              )}
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => {
+                  navigate('/settings');
+                  setShowMobileMenu(false);
+                }}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => {
+                  userProfile ? handleGuestLogout() : handleLogout();
+                  setShowMobileMenu(false);
+                }}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                {userProfile ? 'Exit Guest Mode' : 'Logout'}
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="budget-month">Month</Label>
-              <Input id="budget-month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} required />
-            </div>
-            <DialogFooter>
-              <Button type="submit">Save</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+          )}
+        </div>
+      </header>
 
-      <div className="fixed bottom-6 right-6">
-        <Button onClick={() => setShowBudget(true)} variant="secondary">Set Budget</Button>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Financial Summary */}
+        <FinancialSummary transactions={transactions} budget={budget || undefined} />
+
+        {/* Content Grid */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Transactions List - Takes 2 columns on large screens */}
+          <div className="lg:col-span-2">
+            <TransactionList transactions={transactions} loading={smsLoading} />
+          </div>
+
+          {/* Quick Actions Sidebar */}
+          <div className="space-y-6">
+            <QuickActions 
+              onRefreshTransactions={handleRefreshTransactions}
+              onNavigateToSettings={() => navigate('/settings')}
+              budget={budget || undefined}
+              onBudgetUpdate={handleBudgetUpdate}
+            />
+
+            {/* Quick Stats */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Quick Stats</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Total Transactions</span>
+                  <Badge variant="secondary">{transactions.length}</Badge>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">This Month</span>
+                  <Badge variant="secondary">
+                    {transactions.filter(t => 
+                      t.occurred_at.startsWith(new Date().toISOString().slice(0, 7))
+                    ).length}
+                  </Badge>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Categories</span>
+                  <Badge variant="secondary">
+                    {new Set(transactions.map(t => t.category)).size}
+                  </Badge>
+                </div>
+
+                {totals.topCategory !== "None" && (
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Top Category</span>
+                    <Badge variant="outline">{totals.topCategory}</Badge>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="fixed bottom-4 right-4 max-w-sm">
+          <Card className="border-destructive">
+            <CardContent className="pt-4">
+              <p className="text-sm text-destructive">{error}</p>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="mt-2 w-full"
+                onClick={handleRefreshTransactions}
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </main>
   );
 }
