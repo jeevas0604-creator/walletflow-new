@@ -1,23 +1,14 @@
 // Thin wrapper around capacitor-sms-inbox
 import { Capacitor } from "@capacitor/core";
 
-// @ts-ignore - package may have different export patterns
-let SmsInbox: any;
+// @ts-ignore - Handle different export patterns
+import * as SmsInboxModule from "capacitor-sms-inbox";
 
-try {
-  // Try named import first
-  const { SmsInbox: NamedSmsInbox } = require("capacitor-sms-inbox");
-  SmsInbox = NamedSmsInbox;
-} catch {
-  try {
-    // Try default import
-    const DefaultSmsInbox = require("capacitor-sms-inbox").default;
-    SmsInbox = DefaultSmsInbox?.SmsInbox || DefaultSmsInbox;
-  } catch {
-    // Fallback - try direct require
-    SmsInbox = require("capacitor-sms-inbox");
-  }
-}
+// Extract the actual SmsInbox object from various possible export patterns
+const SmsInbox = (SmsInboxModule as any)?.SmsInbox || 
+                 (SmsInboxModule as any)?.default?.SmsInbox || 
+                 (SmsInboxModule as any)?.default || 
+                 SmsInboxModule;
 
 export interface InboxMessage {
   body: string;
