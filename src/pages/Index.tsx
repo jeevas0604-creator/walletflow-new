@@ -43,12 +43,6 @@ export default function Index() {
 
   useEffect(() => {
     setSeo();
-    
-    // Check for onboarding needs
-    const needsPermission = localStorage.getItem('onboarding_needs_permission') === 'true';
-    if (needsPermission) {
-      setShowOnboarding(true);
-    }
 
     // Load user profile
     const guestProfile = localStorage.getItem('guest_profile');
@@ -56,8 +50,9 @@ export default function Index() {
       setUserProfile(JSON.parse(guestProfile));
     }
 
-    // Load budget
+    // Load budget and start transaction scanning
     loadBudget();
+    restore();
   }, []);
 
   const loadBudget = async () => {
@@ -107,13 +102,6 @@ export default function Index() {
     navigate('/auth');
   };
 
-  if (showOnboarding) {
-    return (
-      <main className="min-h-screen bg-background flex items-center justify-center p-4">
-        <PermissionSetup onComplete={handleOnboardingComplete} />
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-background">
