@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
@@ -68,6 +68,33 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_settings: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          visible_widgets: Json
+          widget_order: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          visible_widgets?: Json
+          widget_order?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          visible_widgets?: Json
+          widget_order?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -122,6 +149,78 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      savings_goals: {
+        Row: {
+          category: string | null
+          color: string | null
+          created_at: string
+          current_amount: number
+          description: string | null
+          id: string
+          target_amount: number
+          target_date: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          current_amount?: number
+          description?: string | null
+          id?: string
+          target_amount: number
+          target_date?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          current_amount?: number
+          description?: string | null
+          id?: string
+          target_amount?: number
+          target_date?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shared_accounts: {
+        Row: {
+          accepted_at: string | null
+          id: string
+          owner_id: string
+          permission_level: string
+          shared_at: string
+          shared_with_id: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          id?: string
+          owner_id: string
+          permission_level?: string
+          shared_at?: string
+          shared_with_id: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          id?: string
+          owner_id?: string
+          permission_level?: string
+          shared_at?: string
+          shared_with_id?: string
+          status?: string
         }
         Relationships: []
       }
