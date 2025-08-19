@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "app.lovable.511a901370494b6d9713a950e943af89",
+  appId: "com.lovable.walletflow",
   appName: "walletflow-new",
   webDir: "dist",
   // Remove server config for production APK builds
