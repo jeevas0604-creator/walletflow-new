@@ -10,7 +10,8 @@ import { TransactionList } from "@/components/dashboard/TransactionList";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { PermissionSetup } from "@/components/onboarding/PermissionSetup";
 import { toast } from "@/components/ui/use-toast";
-import { Settings, Menu, User, LogOut } from "lucide-react";
+import { Settings, Menu, User, LogOut, TrendingUp, Users } from "lucide-react";
+import { SavingsGoals } from "@/components/dashboard/SavingsGoals";
 import { supabase } from "@/integrations/supabase/client";
 
 const setSeo = () => {
@@ -124,6 +125,24 @@ export default function Index() {
               )}
               
               <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate('/insights')}
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Insights
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate('/sharing')}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Sharing
+              </Button>
+              
+              <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => navigate('/settings')}
@@ -164,6 +183,32 @@ export default function Index() {
               )}
               
               <Button 
+                variant="ghost" 
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => {
+                  navigate('/insights');
+                  setShowMobileMenu(false);
+                }}
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Insights
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => {
+                  navigate('/sharing');
+                  setShowMobileMenu(false);
+                }}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Sharing
+              </Button>
+              
+              <Button 
                 variant="outline" 
                 size="sm"
                 className="w-full justify-start"
@@ -200,12 +245,13 @@ export default function Index() {
 
         {/* Content Grid */}
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Transactions List - Takes 2 columns on large screens */}
-          <div className="lg:col-span-2">
+          {/* Main Content - Takes 2 columns on large screens */}
+          <div className="lg:col-span-2 space-y-6">
             <TransactionList transactions={transactions} loading={smsLoading} />
+            <SavingsGoals />
           </div>
 
-          {/* Quick Actions Sidebar */}
+          {/* Sidebar */}
           <div className="space-y-6">
             <QuickActions 
               onRefreshTransactions={handleRefreshTransactions}
@@ -247,6 +293,32 @@ export default function Index() {
                     <Badge variant="outline">{totals.topCategory}</Badge>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Quick Navigation */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Explore</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start"
+                  onClick={() => navigate('/insights')}
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Financial Insights
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start"
+                  onClick={() => navigate('/sharing')}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Account Sharing
+                </Button>
               </CardContent>
             </Card>
           </div>
