@@ -124,6 +124,75 @@ export type Database = {
         }
         Relationships: []
       }
+      savings_goals: {
+        Row: {
+          color: string | null
+          created_at: string
+          current_amount: number
+          description: string | null
+          id: string
+          target_amount: number
+          target_date: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          current_amount?: number
+          description?: string | null
+          id?: string
+          target_amount: number
+          target_date?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          current_amount?: number
+          description?: string | null
+          id?: string
+          target_amount?: number
+          target_date?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shared_accounts: {
+        Row: {
+          created_at: string
+          id: string
+          owner_user_id: string
+          permission: string
+          status: string
+          target_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_user_id: string
+          permission?: string
+          status?: string
+          target_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_user_id?: string
+          permission?: string
+          status?: string
+          target_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       supplement_logs: {
         Row: {
           created_at: string
@@ -190,6 +259,54 @@ export type Database = {
           intake_times?: string[]
           name?: string
           reminder_enabled?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          account: string | null
+          amount: number
+          category: string | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          id: string
+          merchant: string | null
+          occurred_at: string
+          tags: string[] | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account?: string | null
+          amount: number
+          category?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          merchant?: string | null
+          occurred_at?: string
+          tags?: string[] | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account?: string | null
+          amount?: number
+          category?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          merchant?: string | null
+          occurred_at?: string
+          tags?: string[] | null
+          type?: string
           updated_at?: string
           user_id?: string
         }
