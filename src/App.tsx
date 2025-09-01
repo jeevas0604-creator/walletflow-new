@@ -10,6 +10,8 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Settings from "./pages/Settings";
 import Insights from "./pages/Insights";
 import Sharing from "./pages/Sharing";
+import Transactions from "./pages/Transactions";
+import Tasks from "./pages/Tasks";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +24,8 @@ const App = () => (
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+          <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
           <Route path="/sharing" element={<ProtectedRoute><Sharing /></ProtectedRoute>} />

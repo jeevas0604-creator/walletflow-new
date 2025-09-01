@@ -10,10 +10,17 @@ import { useToast } from "@/hooks/use-toast";
 interface Transaction {
   id: string;
   amount: number;
-  type: 'credit' | 'debit';
+  type: string;
   category: string;
   occurred_at: string;
+  description?: string;
+  account?: string;
+  currency?: string;
   merchant?: string;
+  tags?: string[];
+  user_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface MonthlyData {

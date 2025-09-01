@@ -13,12 +13,12 @@ import { useToast } from "@/hooks/use-toast";
 
 interface SharedAccount {
   id: string;
-  owner_id: string;
-  shared_with_id: string;
-  permission_level: 'view' | 'edit';
-  shared_at: string;
-  accepted_at?: string;
-  status: 'pending' | 'accepted' | 'declined';
+  owner_user_id: string;
+  target_user_id: string;
+  permission: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
   profiles?: {
     display_name?: string;
   };
@@ -46,8 +46,8 @@ export default function Sharing() {
       const { data: sharedByMe, error: sharedError } = await supabase
         .from('shared_accounts')
         .select('*')
-        .eq('owner_id', user.id)
-        .order('shared_at', { ascending: false });
+        .eq('owner_user_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (sharedError) throw sharedError;
 
@@ -55,13 +55,13 @@ export default function Sharing() {
       const { data: sharedWithMe, error: receivedError } = await supabase
         .from('shared_accounts')
         .select('*')
-        .eq('shared_with_id', user.id)
-        .order('shared_at', { ascending: false });
+        .eq('target_user_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (receivedError) throw receivedError;
 
-      setSharedAccounts(sharedByMe as SharedAccount[] || []);
-      setReceivedShares(sharedWithMe as SharedAccount[] || []);
+      setSharedAccounts(sharedByMe || []);
+      setReceivedShares(sharedWithMe || []);
     } catch (error) {
       toast({
         title: "Error",
@@ -87,10 +87,10 @@ export default function Sharing() {
       // In a real implementation, you'd look up the user by email
       // For demo purposes, we'll create a placeholder entry
       const shareData = {
-        owner_id: user.id,
-        shared_with_id: 'placeholder-user-id', // In real app, get from user lookup
-        permission_level: permission,
-        status: 'pending' as const
+        owner_user_id: user.id,
+        target_user_id: 'placeholder-user-id', // In real app, get from user lookup
+        permission: permission,
+        status: 'pending'
       };
 
       const { error } = await supabase
@@ -122,8 +122,7 @@ export default function Sharing() {
       const { error } = await supabase
         .from('shared_accounts')
         .update({ 
-          status: action,
-          accepted_at: action === 'accepted' ? new Date().toISOString() : null
+          status: action
         })
         .eq('id', shareId);
 
@@ -282,7 +281,7 @@ export default function Sharing() {
                               {share.profiles?.display_name || 'User'}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              Shared on {new Date(share.shared_at).toLocaleDateString()}
+                              Shared on {new Date(share.created_at).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
@@ -301,7 +300,7 @@ export default function Sharing() {
                             {share.status}
                           </Badge>
                           <Badge variant="outline">
-                            {share.permission_level}
+                            {share.permission}
                           </Badge>
                           <Button
                             size="sm"
@@ -347,13 +346,13 @@ export default function Sharing() {
                               {share.profiles?.display_name || 'User'}'s Account
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              Shared on {new Date(share.shared_at).toLocaleDateString()}
+                              Shared on {new Date(share.created_at).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">
-                            {share.permission_level}
+                            {share.permission}
                           </Badge>
                           {share.status === 'pending' ? (
                             <div className="flex gap-2">
