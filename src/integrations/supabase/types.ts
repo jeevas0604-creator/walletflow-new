@@ -14,261 +14,250 @@ export type Database = {
   }
   public: {
     Tables: {
-      budgets: {
+      ai_workout_library: {
         Row: {
-          amount: number
           created_at: string
+          duration_minutes: number | null
+          exercises_json: Json
+          goal: string | null
           id: string
-          month_year: string
-          updated_at: string
           user_id: string
+          workout_name: string
+          workout_type: string | null
         }
         Insert: {
-          amount: number
           created_at?: string
+          duration_minutes?: number | null
+          exercises_json: Json
+          goal?: string | null
           id?: string
-          month_year: string
-          updated_at?: string
           user_id: string
+          workout_name: string
+          workout_type?: string | null
         }
         Update: {
-          amount?: number
           created_at?: string
+          duration_minutes?: number | null
+          exercises_json?: Json
+          goal?: string | null
           id?: string
-          month_year?: string
-          updated_at?: string
           user_id?: string
+          workout_name?: string
+          workout_type?: string | null
         }
         Relationships: []
       }
-      categories: {
+      exercises: {
         Row: {
-          color: string | null
+          completed: boolean | null
           created_at: string
           id: string
           name: string
-          updated_at: string
-          user_id: string
+          notes: string | null
+          reps: number | null
+          rest_seconds: number | null
+          sets: number
+          weight: number | null
+          workout_id: string
         }
         Insert: {
-          color?: string | null
+          completed?: boolean | null
           created_at?: string
           id?: string
           name: string
-          updated_at?: string
-          user_id: string
+          notes?: string | null
+          reps?: number | null
+          rest_seconds?: number | null
+          sets?: number
+          weight?: number | null
+          workout_id: string
         }
         Update: {
-          color?: string | null
+          completed?: boolean | null
           created_at?: string
           id?: string
           name?: string
-          updated_at?: string
-          user_id?: string
+          notes?: string | null
+          reps?: number | null
+          rest_seconds?: number | null
+          sets?: number
+          weight?: number | null
+          workout_id?: string
         }
-        Relationships: []
-      }
-      dashboard_settings: {
-        Row: {
-          created_at: string
-          id: string
-          updated_at: string
-          user_id: string
-          visible_widgets: Json
-          widget_order: Json
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id: string
-          visible_widgets?: Json
-          widget_order?: Json
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id?: string
-          visible_widgets?: Json
-          widget_order?: Json
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "exercises_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
-          avatar_url: string | null
           created_at: string
-          display_name: string | null
+          daily_water_goal: number | null
+          fitness_goal: string | null
+          full_name: string | null
           id: string
-          updated_at: string
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          display_name?: string | null
-          id: string
-          updated_at?: string
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string
-          display_name?: string | null
-          id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      reminders: {
-        Row: {
-          category: string | null
-          created_at: string
-          due_at: string
-          estimated_amount: number | null
-          id: string
-          title: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          category?: string | null
           created_at?: string
-          due_at: string
-          estimated_amount?: number | null
+          daily_water_goal?: number | null
+          fitness_goal?: string | null
+          full_name?: string | null
           id?: string
-          title: string
           updated_at?: string
           user_id: string
         }
         Update: {
-          category?: string | null
           created_at?: string
-          due_at?: string
-          estimated_amount?: number | null
+          daily_water_goal?: number | null
+          fitness_goal?: string | null
+          full_name?: string | null
           id?: string
-          title?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: []
       }
-      savings_goals: {
+      supplement_logs: {
         Row: {
-          category: string | null
-          color: string | null
           created_at: string
-          current_amount: number
-          description: string | null
+          date: string
           id: string
-          target_amount: number
-          target_date: string | null
-          title: string
+          supplement_id: string
+          taken: boolean | null
+          taken_time: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          supplement_id: string
+          taken?: boolean | null
+          taken_time?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          supplement_id?: string
+          taken?: boolean | null
+          taken_time?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplement_logs_supplement_id_fkey"
+            columns: ["supplement_id"]
+            isOneToOne: false
+            referencedRelation: "supplements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplements: {
+        Row: {
+          created_at: string
+          dosage: string
+          id: string
+          intake_times: string[]
+          name: string
+          reminder_enabled: boolean | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          category?: string | null
-          color?: string | null
           created_at?: string
-          current_amount?: number
-          description?: string | null
+          dosage: string
           id?: string
-          target_amount: number
-          target_date?: string | null
-          title: string
+          intake_times?: string[]
+          name: string
+          reminder_enabled?: boolean | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          category?: string | null
-          color?: string | null
           created_at?: string
-          current_amount?: number
-          description?: string | null
+          dosage?: string
           id?: string
-          target_amount?: number
-          target_date?: string | null
-          title?: string
+          intake_times?: string[]
+          name?: string
+          reminder_enabled?: boolean | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
       }
-      shared_accounts: {
+      water_logs: {
         Row: {
-          accepted_at: string | null
+          created_at: string
+          date: string
+          glasses_consumed: number
           id: string
-          owner_id: string
-          permission_level: string
-          shared_at: string
-          shared_with_id: string
-          status: string
+          logged_at: string
+          user_id: string
         }
         Insert: {
-          accepted_at?: string | null
+          created_at?: string
+          date?: string
+          glasses_consumed?: number
           id?: string
-          owner_id: string
-          permission_level?: string
-          shared_at?: string
-          shared_with_id: string
-          status?: string
+          logged_at?: string
+          user_id: string
         }
         Update: {
-          accepted_at?: string | null
+          created_at?: string
+          date?: string
+          glasses_consumed?: number
           id?: string
-          owner_id?: string
-          permission_level?: string
-          shared_at?: string
-          shared_with_id?: string
-          status?: string
+          logged_at?: string
+          user_id?: string
         }
         Relationships: []
       }
-      transactions: {
+      workouts: {
         Row: {
-          amount: number
-          bank: string | null
-          category: string | null
+          ai_generated: boolean | null
           created_at: string
-          currency: string
-          description: string | null
+          date: string
+          duration_minutes: number | null
           id: string
-          merchant: string | null
-          occurred_at: string
-          raw_message: string | null
-          type: Database["public"]["Enums"]["transaction_type"]
+          name: string
+          notes: string | null
           updated_at: string
           user_id: string
+          workout_type: string | null
         }
         Insert: {
-          amount: number
-          bank?: string | null
-          category?: string | null
+          ai_generated?: boolean | null
           created_at?: string
-          currency?: string
-          description?: string | null
+          date?: string
+          duration_minutes?: number | null
           id?: string
-          merchant?: string | null
-          occurred_at: string
-          raw_message?: string | null
-          type: Database["public"]["Enums"]["transaction_type"]
+          name: string
+          notes?: string | null
           updated_at?: string
           user_id: string
+          workout_type?: string | null
         }
         Update: {
-          amount?: number
-          bank?: string | null
-          category?: string | null
+          ai_generated?: boolean | null
           created_at?: string
-          currency?: string
-          description?: string | null
+          date?: string
+          duration_minutes?: number | null
           id?: string
-          merchant?: string | null
-          occurred_at?: string
-          raw_message?: string | null
-          type?: Database["public"]["Enums"]["transaction_type"]
+          name?: string
+          notes?: string | null
           updated_at?: string
           user_id?: string
+          workout_type?: string | null
         }
         Relationships: []
       }
@@ -280,7 +269,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      transaction_type: "credit" | "debit"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -407,8 +396,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      transaction_type: ["credit", "debit"],
-    },
+    Enums: {},
   },
 } as const
